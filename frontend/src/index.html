@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CloudSEIM Dashboard</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="container">
+      <header class="hero">
+        <h1>CloudSEIM</h1>
+        <p>Mini Cloud Operated SIEM Dashboard</p>
+      </header>
+
+      <section class="controls">
+        <label>
+          API Base URL
+          <input id="apiBase" placeholder="https://your-api-id.execute-api.region.amazonaws.com/prod" />
+        </label>
+        <label>
+          Refresh (seconds)
+          <input id="refreshInterval" type="number" min="2" value="5" />
+        </label>
+        <button id="connectBtn">Connect</button>
+      </section>
+
+      <section class="grid">
+        <article class="card">
+          <h2>Alert Stream</h2>
+          <div id="alerts"></div>
+        </article>
+
+        <article class="card">
+          <h2>Recent Logs</h2>
+          <div id="logs"></div>
+        </article>
+      </section>
+
+      <section class="card">
+        <h2>Adaptive Log Volume Chart (last 60 min)</h2>
+        <canvas id="chart" width="1000" height="260"></canvas>
+      </section>
+    </main>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

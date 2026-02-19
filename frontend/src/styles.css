@@ -1,0 +1,95 @@
+:root {
+  --bg: #0b132b;
+  --panel: #1c2541;
+  --accent: #5bc0be;
+  --warning: #ff7a59;
+  --text: #e0fbfc;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: "Segoe UI", Tahoma, sans-serif;
+  background: radial-gradient(circle at top right, #1c2541, #0b132b 45%);
+  color: var(--text);
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.hero h1 {
+  margin: 0;
+  font-size: 2rem;
+  color: var(--accent);
+}
+
+.controls {
+  margin: 1rem 0;
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+input {
+  background: #081226;
+  color: var(--text);
+  border: 1px solid #334;
+  border-radius: 8px;
+  padding: 0.5rem;
+  min-width: 280px;
+}
+
+button {
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  padding: 0.6rem 0.9rem;
+  color: #02111b;
+  font-weight: 600;
+  cursor: pointer;
+  align-self: end;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+
+.card {
+  background: rgba(28, 37, 65, 0.85);
+  border: 1px solid #3a506b;
+  border-radius: 12px;
+  padding: 0.8rem;
+  margin-bottom: 0.75rem;
+}
+
+.list-row {
+  border-bottom: 1px solid #2e3d5a;
+  padding: 0.5rem 0;
+  font-size: 0.9rem;
+}
+
+.severity-high { color: #ff595e; font-weight: 700; }
+.severity-medium { color: #ffca3a; font-weight: 700; }
+.severity-low { color: #8ac926; font-weight: 700; }
+
+canvas {
+  width: 100%;
+  border-radius: 8px;
+  background: #081226;
+}
+
+@media (max-width: 900px) {
+  .grid { grid-template-columns: 1fr; }
+  input { min-width: 100%; }
+}

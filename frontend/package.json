@@ -1,0 +1,12 @@
+{
+  "name": "cloudseim-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "build": "tsc -p tsconfig.json && cp src/index.html dist/index.html && cp src/styles.css dist/styles.css",
+    "dev": "python3 -m http.server 8080 --directory src"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.2"
+  }
+}

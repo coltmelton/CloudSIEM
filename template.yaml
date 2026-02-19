@@ -1,0 +1,210 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Mini Cloud Operated SIEM for Cybersecurity Monitoring
+
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    Timeout: 15
+    MemorySize: 256
+    Environment:
+      Variables:
+        TABLE_NAME: !Ref SeimTable
+        SNS_TOPIC_ARN: !Ref SeimAlertsTopic
+        METRIC_NAMESPACE: CloudSEIM
+
+Resources:
+  SeimHttpApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      CorsConfiguration:
+        AllowOrigins:
+          - '*'
+        AllowHeaders:
+          - '*'
+        AllowMethods:
+          - GET
+          - POST
+          - OPTIONS
+
+  SeimTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: pk
+          AttributeType: S
+        - AttributeName: sk
+          AttributeType: S
+        - AttributeName: gsi1pk
+          AttributeType: S
+        - AttributeName: gsi1sk
+          AttributeType: S
+      KeySchema:
+        - AttributeName: pk
+          KeyType: HASH
+        - AttributeName: sk
+          KeyType: RANGE
+      GlobalSecondaryIndexes:
+        - IndexName: GSI1
+          KeySchema:
+            - AttributeName: gsi1pk
+              KeyType: HASH
+            - AttributeName: gsi1sk
+              KeyType: RANGE
+          Projection:
+            ProjectionType: ALL
+
+  SeimAlertsTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: CloudSEIM Security Alerts
+
+  IngestFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: backend/
+      Handler: src/handlers/ingest.handler
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref SeimTable
+        - SNSPublishMessagePolicy:
+            TopicName: !GetAtt SeimAlertsTopic.TopicName
+        - Statement:
+            - Effect: Allow
+              Action:
+                - cloudwatch:PutMetricData
+              Resource: '*'
+      Events:
+        LogIngest:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref SeimHttpApi
+            Method: POST
+            Path: /logs
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/handlers/ingest.ts
+        Minify: true
+        Target: es2021
+        Sourcemap: false
+
+  LogsQueryFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: backend/
+      Handler: src/handlers/query.logsHandler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref SeimTable
+      Events:
+        LogsQuery:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref SeimHttpApi
+            Method: GET
+            Path: /logs
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/handlers/query.ts
+        Minify: true
+        Target: es2021
+        Sourcemap: false
+
+  AlertsQueryFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: backend/
+      Handler: src/handlers/query.alertsHandler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref SeimTable
+      Events:
+        AlertsQuery:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref SeimHttpApi
+            Method: GET
+            Path: /alerts
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/handlers/query.ts
+        Minify: true
+        Target: es2021
+        Sourcemap: false
+
+  StatsFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: backend/
+      Handler: src/handlers/stats.handler
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref SeimTable
+      Events:
+        StatsQuery:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref SeimHttpApi
+            Method: GET
+            Path: /stats
+    Metadata:
+      BuildMethod: esbuild
+      BuildProperties:
+        EntryPoints:
+          - src/handlers/stats.ts
+        Minify: true
+        Target: es2021
+        Sourcemap: false
+
+  FrontendBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+      WebsiteConfiguration:
+        IndexDocument: index.html
+
+  FrontendBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref FrontendBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Sid: PublicReadGetObject
+            Effect: Allow
+            Principal: '*'
+            Action:
+              - s3:GetObject
+            Resource: !Sub '${FrontendBucket.Arn}/*'
+
+Outputs:
+  ApiBaseUrl:
+    Description: HTTP API base URL
+    Value: !Sub 'https://${SeimHttpApi}.execute-api.${AWS::Region}.amazonaws.com'
+
+  DynamoTableName:
+    Description: DynamoDB table for logs and alerts
+    Value: !Ref SeimTable
+
+  AlertsTopicArn:
+    Description: SNS topic for security alerts
+    Value: !Ref SeimAlertsTopic
+
+  FrontendWebsiteURL:
+    Description: S3 website endpoint
+    Value: !GetAtt FrontendBucket.WebsiteURL
