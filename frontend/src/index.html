@@ -3,45 +3,143 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CloudSEIM Dashboard</title>
+    <title>CloudSIEM Dashboard</title>
     <link rel="stylesheet" href="styles.css" />
+    <!-- Chart.js for animated live charts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
   </head>
   <body>
+    <!-- Animated background grid -->
+    <div class="bg-grid" aria-hidden="true"></div>
+
     <main class="container">
+      <!-- ── Header ── -->
       <header class="hero">
-        <h1>CloudSEIM</h1>
-        <p>Mini Cloud Operated SIEM Dashboard</p>
+        <div class="hero-left">
+          <div>
+            <h1>CloudSIEM</h1>
+            <p class="hero-sub">Security Information &amp; Event Management</p>
+          </div>
+        </div>
+        <div class="hero-stats" id="heroStats">
+          <div class="stat-pill" id="statTotal">
+            <span class="stat-label">Events</span>
+            <span class="stat-val" id="statTotalVal">—</span>
+          </div>
+          <div class="stat-pill critical" id="statCritical">
+            <span class="stat-label">Critical</span>
+            <span class="stat-val" id="statCriticalVal">0</span>
+          </div>
+          <div class="stat-pill warn" id="statWarn">
+            <span class="stat-label">Warnings</span>
+            <span class="stat-val" id="statWarnVal">0</span>
+          </div>
+          <div class="live-badge" id="liveBadge">
+            <span class="pulse-dot"></span> LIVE
+          </div>
+        </div>
       </header>
 
-      <section class="controls">
-        <label>
-          API Base URL
-          <input id="apiBase" placeholder="https://your-api-id.execute-api.region.amazonaws.com/prod" />
-        </label>
-        <label>
-          Refresh (seconds)
-          <input id="refreshInterval" type="number" min="2" value="5" />
-        </label>
-        <button id="connectBtn">Connect</button>
+      <!-- ── Controls ── -->
+      <section class="controls card">
+        <div class="controls-inner">
+          <label class="ctrl-label">
+            <span class="label-text">API Base URL</span>
+            <input id="apiBase" placeholder="https://your-api-id.execute-api.region.amazonaws.com/prod" />
+          </label>
+          <label class="ctrl-label ctrl-small">
+            <span class="label-text">Refresh (s)</span>
+            <input id="refreshInterval" type="number" min="2" value="5" />
+          </label>
+          <button id="connectBtn">
+            Connect
+          </button>
+        </div>
       </section>
 
+      <!-- ── Main Grid ── -->
       <section class="grid">
-        <article class="card">
-          <h2>Alert Stream</h2>
-          <div id="alerts"></div>
+
+        <!-- Alert Stream -->
+        <article class="card panel-alerts">
+          <div class="card-header">
+            <h2>Alert Stream</h2>
+            <div class="header-controls">
+              <select id="alertSeverityFilter" class="filter-select">
+                <option value="">All Severities</option>
+                <option value="high">Critical</option>
+                <option value="medium">Warning</option>
+                <option value="low">Low</option>
+              </select>
+              <span class="badge-count" id="alertCount">0</span>
+            </div>
+          </div>
+          <div class="list-container" id="alerts"></div>
         </article>
 
-        <article class="card">
-          <h2>Recent Logs</h2>
-          <div id="logs"></div>
+        <!-- Recent Logs -->
+        <article class="card panel-logs">
+          <div class="card-header">
+            <h2>Recent Logs</h2>
+            <div class="header-controls">
+              <select id="logTypeFilter" class="filter-select">
+                <option value="">All Types</option>
+                <option value="auth">Auth</option>
+                <option value="api">API</option>
+                <option value="mouse">Mouse</option>
+                <option value="lambda">Lambda</option>
+                <option value="dynamodb">DynamoDB</option>
+                <option value="sns">SNS</option>
+                <option value="cloudwatch">CloudWatch</option>
+                <option value="s3">S3</option>
+                <option value="ec2">EC2</option>
+              </select>
+              <select id="logSortOrder" class="filter-select">
+                <option value="desc">Newest</option>
+                <option value="asc">Oldest</option>
+              </select>
+              <span class="badge-count" id="logCount">0</span>
+            </div>
+          </div>
+          <div class="list-container" id="logs"></div>
         </article>
       </section>
 
-      <section class="card">
-        <h2>Adaptive Log Volume Chart (last 60 min)</h2>
-        <canvas id="chart" width="1000" height="260"></canvas>
+      <!-- ── Chart ── -->
+      <section class="card chart-card">
+        <div class="card-header">
+          <h2>Adaptive Log Volume</h2>
+          <div class="header-controls">
+            <span class="chart-sub" id="chartMeta">last 60 min</span>
+            <button class="icon-btn" id="chartToggleBtn" title="Toggle chart type">Toggle Chart Type</button>
+          </div>
+        </div>
+        <div class="chart-wrapper">
+          <span class="chart-type-label" id="chartTypeLabel">Line Graph</span>
+          <canvas id="chart"></canvas>
+        </div>
       </section>
+
+      <!-- ── AWS Service Status ── -->
+      <section class="card aws-card">
+        <div class="card-header">
+          <h2>AWS Service Activity</h2>
+        </div>
+        <div class="aws-grid" id="awsServices">
+          <!-- Populated by JS -->
+        </div>
+      </section>
+
     </main>
+
+    <!-- ── Log Detail Modal ── -->
+    <div class="modal-backdrop" id="modalBackdrop" role="dialog" aria-modal="true" aria-label="Log Detail">
+      <div class="modal" id="modal">
+        <button class="modal-close" id="modalClose" aria-label="Close">✕</button>
+        <h3 id="modalTitle">Event Detail</h3>
+        <div id="modalBody" class="modal-body"></div>
+      </div>
+    </div>
 
     <script type="module" src="app.js"></script>
   </body>
